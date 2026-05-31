@@ -142,6 +142,24 @@ def api_debug():
     files = os.listdir(vol) if os.path.exists(vol) else []
     return jsonify({"volume": vol, "files": files})
 
+@app.route("/api/test-sync")
+def api_test_sync():
+    """Prueba la conexion sin emitir boletas."""
+    from falabella_session import FalabellaSession
+    from falabella_orders import FalabellaOrdersClient
+    config = load_config()
+    session = FalabellaSession(config.get("fal_email",""), config.get("fal_password",""))
+    if not session.ensure_authenticated():
+        return jsonify({"error": "No autenticado"})
+    client = FalabellaOrdersClient(session)
+    orders = client.get_delivered_orders(days_back=30)
+    return jsonify({
+        "ok": True,
+        "delivered_orders": len(orders),
+        "orders": [{"id": o["order_id"], "buyer": o["buyer_name"], "total": o["total_amount"], "status": o["status"]} for o in orders[:10]]
+    })
+
+
 
 if __name__ == "__main__":
     init_db()
