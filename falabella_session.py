@@ -20,7 +20,7 @@ class FalabellaSession:
     def _generate_signature(self, parameters):
         sorted_keys = sorted(parameters.keys())
         query = "&".join(
-            f"{quote(str(k), safe=chr(0)))}={quote(str(parameters[k]), safe=chr(0))}"
+            f"{quote(str(k), safe="")}={quote(str(parameters[k]), safe=chr(0))}"
             for k in sorted_keys
         )
         return hmac.new(self.api_key.encode(), query.encode(), hashlib.sha256).hexdigest()
