@@ -168,6 +168,15 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=port, debug=False)
 
 
+
+@app.route("/api/debug-config")
+def api_debug_config():
+    import json
+    try:
+        with open("/app/data/fal_config.json") as f:
+            return jsonify(json.load(f))
+    except Exception as e:
+        return jsonify({"error": str(e)})
 @app.route("/api/set-cookies", methods=["POST"])
 def api_set_cookies():
     """Recibe cookies de sesión Falabella desde el navegador autenticado."""
