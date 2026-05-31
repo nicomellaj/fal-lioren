@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Falabella → Lioren | Boletas Automáticas</title>
+<style>
+:root{--bg:#0d0d0d;--card:#161616;--border:#222;--accent:#f5a623;--accent2:#00e5a0;--accent3:#ff4f4f;--text:#f0f0f0;--muted:#666}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'SF Mono',monospace;min-height:100vh}
+nav{background:#111;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;gap:2rem;height:56px}
+.logo{font-size:1.1rem;font-weight:700;color:var(--accent);letter-spacing:-1px;text-decoration:none}
+.logo span{color:#e03030}
+nav a{color:var(--muted);text-decoration:none;font-size:.8rem;transition:color .2s}
+nav a:hover,nav a.active{color:var(--text)}
+.btn-sync{margin-left:auto;background:var(--accent);color:#000;border:none;padding:.5rem 1.2rem;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.4rem}
+.btn-sync:hover{opacity:.85}
+main{max-width:1200px;margin:0 auto;padding:2rem}
+.alert{background:#1a1a0a;border:1px solid #f5a62355;border-radius:8px;padding:1rem 1.5rem;margin-bottom:1.5rem;font-size:.85rem;display:flex;align-items:center;gap:.8rem}
+.alert a{color:var(--accent);text-decoration:none}
+.status-bar{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.8rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1.5rem;font-size:.78rem;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent2);box-shadow:0 0 6px var(--accent2)}
+.dot.off{background:var(--accent3);box-shadow:0 0 6px var(--accent3)}
+.dot.warn{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;position:relative;overflow:hidden}
+.card-label{font-size:.65rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.8rem}
+.card-value{font-size:2.2rem;font-weight:900;line-height:1}
+.card-sub{font-size:.7rem;color:var(--muted);margin-top:.4rem}
+.c-yellow .card-value{color:var(--accent)}
+.c-green .card-value{color:var(--accent2)}
+.c-red .card-value{color:var(--accent3)}
+.c-blue .card-value{color:#4fc3f7}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:1rem}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.panel-header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:.75rem;font-weight:600;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}
+.panel-header a{color:var(--accent);text-decoration:none;font-size:.72rem}
+table{width:100%;border-collapse:collapse}
+th{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:.8rem 1.5rem;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:.9rem 1.5rem;font-size:.8rem;border-bottom:1px solid #1a1a1a}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#1a1a1a}
+.order-id a{color:var(--accent);text-decoration:none;font-size:.75rem}
+.order-id a:hover{text-decoration:underline}
+.badge{display:inline-block;padding:.25rem .7rem;border-radius:4px;font-size:.7rem;font-weight:600}
+.badge-emitida{background:#00e5a015;color:var(--accent2);border:1px solid #00e5a030}
+.badge-pendiente{background:#f5a62315;color:var(--accent);border:1px solid #f5a62330}
+.badge-error{background:#ff4f4f15;color:var(--accent3);border:1px solid #ff4f4f30}
+.folio-link{color:var(--accent2);text-decoration:none;font-size:.8rem}
+.folio-link:hover{text-decoration:underline}
+.dl-badge{font-size:.72rem;color:var(--muted);cursor:pointer;margin-left:.3rem;transition:color .2s}
+.dl-badge:hover{color:var(--accent2)}
+.empty{padding:3rem 1.5rem;text-align:center;color:var(--muted);font-size:.8rem}
+.log-list{padding:1rem 1.5rem;max-height:420px;overflow-y:auto}
+.log-item{font-size:.73rem;color:var(--muted);padding:.35rem 0;border-bottom:1px solid #1a1a1a;display:flex;gap:.8rem}
+.log-item:last-child{border-bottom:none}
+.log-time{color:#444;min-width:40px;flex-shrink:0}
+.log-msg{color:#ccc}
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="/">Falabella<span>→</span>Lioren</a>
+  <a href="/" class="{{ 'active' if not mostrar_todos else '' }}">Dashboard</a>
+  <a href="/config">Configuración</a>
+  <button class="btn-sync" onclick="syncNow()">↻ Sincronizar ahora</button>
+</nav>
+<main>
+  {% if not configured %}
+  <div class="alert">⚠️ Configuración incompleta — credenciales faltantes.
+    <a href="/config">Completar configuración →</a>
+  </div>
+  {% endif %}
+
+  <div class="status-bar">
+    <div class="{{ 'dot' if configured else 'dot off' }}"></div>
+    <span>{{ 'Conectado — Falabella + Lioren activos' if configured else 'Sin configurar' }}</span>
+    <span>·</span>
+    <span>↻ Sincronización cada {{ interval }} min</span>
+    <span>·</span>
+    <span>Buscando últimos {{ dias }} días · Solo órdenes <strong style="color:var(--accent2)">delivered</strong></span>
+  </div>
+
+  <div class="cards">
+    <div class="card c-yellow">
+      <div class="card-label">Total Pedidos</div>
+      <div class="card-value">{{ stats.total }}</div>
+      <div class="card-sub">registrados en BD</div>
+    </div>
+    <div class="card c-green">
+      <div class="card-label">Boletas Emitidas</div>
+      <div class="card-value">{{ stats.emitidas }}</div>
+      <div class="card-sub">en Lioren.cl</div>
+    </div>
+    <div class="card c-red">
+      <div class="card-label">Con Error</div>
+      <div class="card-value">{{ stats.errores }}</div>
+      <div class="card-sub">revisar logs</div>
+    </div>
+    <div class="card c-blue">
+      <div class="card-label">Monto Total</div>
+      <div class="card-value">${{ "{:,.0f}".format(stats.monto_total).replace(",",".") }}</div>
+      <div class="card-sub">CLP facturado</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-header">
+        <span>{% if mostrar_todos %}Todos los pedidos{% else %}Pedidos recientes{% endif %}</span>
+        {% if not mostrar_todos %}<a href="/todos">Ver todos →</a>{% endif %}
+      </div>
+      {% if orders %}
+      <table>
+        <thead>
+          <tr>
+            <th>Pedido Falabella</th>
+            <th>Comprador</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Folio</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+          <tr>
+            <td class="order-id">
+              <a href="https://sellercenter.falabella.com/index.php?controller=OrderDetail&id_order={{ o.fal_order_id }}" target="_blank">
+                #{{ o.fal_order_number or o.fal_order_id }}
+              </a>
+            </td>
+            <td>{{ o.buyer_name or '—' }}</td>
+            <td>${{ "{:,.0f}".format(o.total_amount).replace(",",".") }}</td>
+            <td>
+              <span class="badge badge-{{ o.boleta_status }}">
+                {% if o.boleta_status == 'emitida' %}✓ emitida
+                {% elif o.boleta_status == 'error' %}✗ error
+                {% else %}pendiente{% endif %}
+              </span>
+            </td>
+            <td>
+              {% if o.boleta_folio %}
+                <a class="folio-link" href="{{ o.boleta_pdf_url or '#' }}" target="_blank" onclick="marcarDescargado('{{ o.fal_order_id }}')">
+                  {{ o.boleta_folio }}
+                </a>
+                <span class="dl-badge" id="dl-{{ o.fal_order_id }}" onclick="marcarDescargado('{{ o.fal_order_id }}')">
+                  {% if o.pdf_descargado %}✓ ok{% else %}○{% endif %}
+                </span>
+              {% else %}—{% endif %}
+            </td>
+            <td style="color:var(--muted);font-size:.72rem">{{ o.created_at[:10] if o.created_at else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty">Sin pedidos aún — ejecuta una sincronización</div>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span>Log de Actividad</span>
+        <span>{{ logs|length }}</span>
+      </div>
+      <div class="log-list">
+        {% if logs %}
+          {% for log in logs %}
+          <div class="log-item">
+            <span class="log-time">{{ log.timestamp }}</span>
+            <span class="log-msg">{{ log.message }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty">Sin actividad registrada</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+async function syncNow() {
+  const btn = document.querySelector('.btn-sync');
+  btn.textContent = '↻ Sincronizando...';
+  btn.disabled = true;
+  await fetch('/api/sync', {method:'POST'});
+  setTimeout(() => location.reload(), 4000);
+}
+
+async function marcarDescargado(orderId) {
+  const badge = document.getElementById('dl-' + orderId);
+  if (badge) { badge.textContent = '✓ ok'; badge.style.color = 'var(--accent2)'; }
+  await fetch('/api/mark-descargado/' + orderId, {method:'POST'});
+}
+</script>
+</body>
+</html>

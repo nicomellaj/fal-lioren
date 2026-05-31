@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Configuración | Falabella → Lioren</title>
+<style>
+:root{--bg:#0d0d0d;--card:#161616;--border:#222;--accent:#f5a623;--accent2:#00e5a0;--text:#f0f0f0;--muted:#666}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'SF Mono',monospace;min-height:100vh}
+nav{background:#111;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;gap:2rem;height:56px}
+.logo{font-size:1.1rem;font-weight:700;color:var(--accent);letter-spacing:-1px;text-decoration:none}
+.logo span{color:#e03030}
+nav a{color:var(--muted);text-decoration:none;font-size:.8rem}
+nav a.active{color:var(--text)}
+main{max-width:800px;margin:0 auto;padding:2rem}
+h1{font-size:1.8rem;font-weight:900;margin-bottom:.3rem}
+.sub{color:var(--muted);font-size:.8rem;margin-bottom:2rem}
+.alert-ok{background:#00e5a015;border:1px solid #00e5a030;border-radius:8px;padding:1rem 1.5rem;margin-bottom:1.5rem;font-size:.85rem;color:var(--accent2)}
+.section{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin-bottom:1rem}
+.section-title{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.2rem;padding-bottom:.8rem;border-bottom:1px solid var(--border)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.field{display:flex;flex-direction:column;gap:.4rem}
+.field label{font-size:.72rem;color:var(--muted)}
+.field input,.field select{background:#0d0d0d;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;font-size:.82rem;padding:.6rem .9rem}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.hint{font-size:.68rem;color:#444;margin-top:.3rem;line-height:1.4}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0}
+.toggle-row label{font-size:.8rem;color:var(--muted)}
+input[type="checkbox"]{width:18px;height:18px;accent-color:var(--accent)}
+.actions{display:flex;gap:1rem;margin-top:1.5rem}
+.btn-save{background:var(--accent);color:#000;border:none;padding:.7rem 2rem;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer}
+.btn-save:hover{opacity:.85}
+.btn-cancel{background:transparent;color:var(--muted);border:1px solid var(--border);padding:.7rem 1.5rem;border-radius:6px;font-size:.85rem;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="/">Falabella<span>→</span>Lioren</a>
+  <a href="/">Dashboard</a>
+  <a href="/config" class="active">Configuración</a>
+</nav>
+<main>
+  <h1>Configuración</h1>
+  <p class="sub">Credenciales Falabella Seller Center y Lioren.cl</p>
+
+  {% if saved %}
+  <div class="alert-ok">✅ Configuración guardada correctamente</div>
+  {% endif %}
+
+  <form method="POST">
+    <div class="section">
+      <div class="section-title">Falabella Seller Center</div>
+      <div class="row">
+        <div class="field">
+          <label>Email de acceso</label>
+          <input name="fal_email" type="email" value="{{ config.fal_email }}" placeholder="tu@empresa.cl">
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input name="fal_password" type="password" value="{{ config.fal_password }}" placeholder="••••••••">
+        </div>
+      </div>
+      <p class="hint">Se usa para autenticarse en Falabella Seller Center via SSO Keycloak.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Lioren.cl</div>
+      <div class="row">
+        <div class="field">
+          <label>Email Lioren</label>
+          <input name="lioren_email" type="email" value="{{ config.lioren_email }}" placeholder="correo@empresa.cl">
+        </div>
+        <div class="field">
+          <label>Contraseña Lioren</label>
+          <input name="lioren_password" type="password" value="{{ config.lioren_password }}" placeholder="••••••••">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:1rem">
+        <label>API Key (JWT) — Client Secret de Lioren</label>
+        <input name="lioren_jwt" type="password" value="{{ config.lioren_jwt }}" placeholder="eyJ0eXAi...">
+        <p class="hint">Obtén en lioren.cl → Configuración → Integraciones</p>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>RUT Emisor</label>
+          <input name="rut_emisor" type="text" value="{{ config.rut_emisor }}" placeholder="76123456-7">
+        </div>
+        <div class="field">
+          <label>Tipo DTE boleta</label>
+          <select name="tipo_dte">
+            <option value="39" {{ 'selected' if config.tipo_dte == 39 }}>39 — Boleta Electrónica</option>
+            <option value="41" {{ 'selected' if config.tipo_dte == 41 }}>41 — Boleta No Afecta</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Parámetros de Sincronización</div>
+      <div class="toggle-row">
+        <label>Sincronización automática</label>
+        <input type="checkbox" name="sync_auto" {{ 'checked' if config.sync_auto }}>
+      </div>
+      <div class="row" style="margin-top:1rem">
+        <div class="field">
+          <label>Intervalo (minutos)</label>
+          <input name="intervalo_min" type="number" value="{{ config.intervalo_min }}" min="5" max="1440">
+        </div>
+        <div class="field">
+          <label>Días hacia atrás (ventana de búsqueda)</label>
+          <input name="dias_atras" type="number" value="{{ config.dias_atras }}" min="1" max="30">
+        </div>
+      </div>
+      <p class="hint">⚡ Solo se emiten boletas para órdenes en estado <strong style="color:#00e5a0">delivered</strong> (entregadas al cliente).</p>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="btn-save">Guardar configuración</button>
+      <a href="/" class="btn-cancel">Cancelar</a>
+    </div>
+  </form>
+</main>
+</body>
+</html>
