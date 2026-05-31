@@ -7,6 +7,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from config import load_config, save_config
 from database import init_db, get_all_orders, get_stats, get_logs, mark_pdf_descargado
+
+@app.before_request
+def ensure_db():
+    init_db()
 from sync_service import SyncService
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
