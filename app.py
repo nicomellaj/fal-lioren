@@ -193,6 +193,12 @@ def api_debug_config():
             return jsonify(json.load(f))
     except Exception as e:
         return jsonify({"error": str(e)})
+
+@app.route("/api/reset-errors", methods=["POST"])
+def api_reset_errors():
+    from database import reset_errors
+    deleted = reset_errors()
+    return jsonify({"ok": True, "deleted": deleted})
 @app.route("/api/set-cookies", methods=["POST"])
 def api_set_cookies():
     """Recibe cookies de sesión Falabella desde el navegador autenticado."""

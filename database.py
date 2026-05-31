@@ -117,3 +117,10 @@ def add_log(message, level="info"):
     conn.execute("DELETE FROM logs WHERE id NOT IN (SELECT id FROM logs ORDER BY id DESC LIMIT 200)")
     conn.commit()
     conn.close()
+
+def reset_errors():
+    """Elimina órdenes con error para que sean reintentadas."""
+    conn = get_db()
+    conn.execute("DELETE FROM orders WHERE status = 'error'")
+    conn.commit()
+    return conn.execute("SELECT changes()").fetchone()[0]
