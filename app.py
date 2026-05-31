@@ -201,6 +201,14 @@ def api_debug_db():
     conn = database.get_conn()
     rows = conn.execute("SELECT fal_order_id, boleta_status, boleta_folio, boleta_pdf_url FROM orders LIMIT 20").fetchall()
     return jsonify([{"id": r[0], "status": r[1], "folio": r[2], "pdf_url": r[3]} for r in rows])
+
+@app.route("/api/reset-one/<order_id>", methods=["POST"])
+def api_reset_one(order_id):
+    import database
+    conn = database.get_conn()
+    conn.execute("DELETE FROM orders WHERE fal_order_id=?", (order_id,))
+    conn.commit()
+    return jsonify({"ok": True})
 @app.route("/api/reset-errors", methods=["POST"])
 def api_reset_errors():
     from database import reset_errors
