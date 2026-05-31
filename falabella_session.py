@@ -9,20 +9,25 @@ import xmltodict
 
 
 class FalabellaSession:
-    def __init__(self):
+    def __init__(self, email=None, password=None):
         self.api_url = os.environ.get("FALABELLA_API_URL", "https://sellercenter-api.falabella.com")
-        self.user_id = os.environ.get("FALABELLA_USER_ID", "")
+        self.user_id = email or os.environ.get("FALABELLA_USER_ID", "")
         self.api_key = os.environ.get("FALABELLA_API_KEY", "")
 
+    def ensure_authenticated(self):
+        return bool(self.user_id and self.api_key)
+
     def _get_timestamp(self):
-        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.") + f"{datetime.now(timezone.utc).microsecond // 1000:03d}Z"
+        now = datetime.now(timezone.utc)
+        ms = now.microsecond // 1000
+        return now.strftime("%Y-%m-%dT%H:%M:%S.") + str(ms).zfill(3) + "Z"
 
     def _generate_signature(self, parameters):
         sorted_keys = sorted(parameters.keys())
-        query = "&".join(
-            f"{quote(str(k), safe="")}={quote(str(parameters[k]), safe=chr(0))}"
-            for k in sorted_keys
-        )
+        parts = []
+        for k in sorted_keys:
+            parts.append(quote(str(k), safe="") + "=" + quote(str(parameters[k]), safe=""))
+        query = "&".join(parts)
         return hmac.new(self.api_key.encode(), query.encode(), hashlib.sha256).hexdigest()
 
     def get_signed_url(self, action, extra_params=None):
