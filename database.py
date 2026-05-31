@@ -120,7 +120,7 @@ def add_log(message, level="info"):
 
 def reset_errors():
     """Elimina órdenes con error para que sean reintentadas."""
-    conn = get_db()
+    conn = get_conn()
     conn.execute("DELETE FROM orders WHERE status = 'error'")
     conn.commit()
     return conn.execute("SELECT changes()").fetchone()[0]
