@@ -169,6 +169,22 @@ if __name__ == "__main__":
 
 
 
+
+@app.route("/api/debug-auth")
+def api_debug_auth():
+    import os
+    from falabella_session import FalabellaSession
+    config = load_config()
+    email = config.get("fal_email", "")
+    api_key = os.environ.get("FALABELLA_API_KEY", "NO EXISTE")
+    session = FalabellaSession(email)
+    return jsonify({
+        "email": email,
+        "api_key_env": api_key[:10] + "..." if len(api_key) > 10 else api_key,
+        "session_user_id": session.user_id,
+        "session_api_key": session.api_key[:10] + "..." if len(session.api_key) > 10 else session.api_key,
+        "ensure_authenticated": session.ensure_authenticated(),
+    })
 @app.route("/api/debug-config")
 def api_debug_config():
     import json
