@@ -59,6 +59,7 @@ class LiorenClient:
             raise Exception(f"Lioren error {r.status_code}: {r.text[:200]}")
 
         data = r.json()
+        logger.info(f"Lioren response: {data}")
 
         folio = (
             data.get("folio") or
