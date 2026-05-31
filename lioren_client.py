@@ -1,6 +1,7 @@
-"""Cliente Lioren.cl para emitir boletas desde órdenes Falabella."""
+"""Cliente Lioren.cl para emitir boletas desde ordenes Falabella."""
 import logging
 import requests
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -14,44 +15,42 @@ class LiorenClient:
         self.tipo_dte = tipo_dte
         self.headers = {
             "Authorization": f"Bearer {self.jwt}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept": "application/json",
         }
 
     def emitir_boleta(self, order: dict) -> dict:
-        """
-        Emite boleta DTE 39 para una orden Falabella delivered.
-        Retorna {"folio": X, "pdf_url": "..."} o lanza excepción.
-        """
         items = order.get("items", [])
         if not items:
             items = [{"name": "Venta Falabella", "quantity": 1, "unit_price": order.get("total_amount", 0)}]
 
-        detalle = []
+        detalles = []
         for item in items:
             precio = round(float(item.get("unit_price", 0)))
             qty = int(item.get("quantity", 1))
             if precio <= 0:
                 continue
-            detalle.append({
-                "NmbItem": item.get("name", "Producto")[:80],
-                "QtyItem": qty,
-                "PrcItem": precio,
+            detalles.append({
+                "nombre": item.get("name", "Producto")[:80],
+                "cantidad": qty,
+                "precio": precio,
+                "exento": False,
             })
 
-        if not detalle:
-            raise ValueError("Sin items válidos para emitir boleta")
+        if not detalles:
+            raise ValueError("Sin items validos para emitir boleta")
 
         payload = {
-            "Encabezado": {
-                "IdDoc": {
-                    "TipoDTE": self.tipo_dte,
-                    "Folio": 0,
-                },
-                "Emisor": {
-                    "RUTEmisor": self.rut_emisor,
-                },
+            "emisor": {
+                "tipodoc": str(self.tipo_dte),
+                "servicio": 3,
+                "fecha": datetime.now().strftime("%Y-%m-%d"),
             },
-            "Detalle": detalle,
+            "receptor": {
+                "rut": "66666666-6",
+                "rs": "Consumidor Final",
+            },
+            "detalles": detalles,
         }
 
         r = requests.post(LIOREN_API, json=payload, headers=self.headers, timeout=30)
@@ -75,7 +74,7 @@ class LiorenClient:
         )
 
         if not folio:
-            raise Exception(f"Lioren no retornó folio: {data}")
+            raise Exception(f"Lioren no retorno folio: {data}")
 
-        logger.info(f"✅ Boleta emitida — Orden {order['order_id']} — Folio {folio}")
+        logger.info(f"Boleta emitida Orden {order['order_id']} Folio {folio}")
         return {"folio": str(folio), "pdf_url": pdf_url}
