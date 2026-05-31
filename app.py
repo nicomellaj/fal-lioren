@@ -148,3 +148,17 @@ if __name__ == "__main__":
     setup_scheduler()
     port = int(os.environ.get("PORT", 8081))
     app.run(host="0.0.0.0", port=port, debug=False)
+
+
+@app.route("/api/set-cookies", methods=["POST"])
+def api_set_cookies():
+    """Recibe cookies de sesión Falabella desde el navegador autenticado."""
+    data = request.json or {}
+    cookies = data.get("cookies", {})
+    if not cookies:
+        return jsonify({"error": "No cookies"}), 400
+    config = load_config()
+    config["fal_cookies"] = cookies
+    from config import save_config
+    save_config(config)
+    return jsonify({"ok": True, "cookies": len(cookies)})
