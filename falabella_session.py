@@ -56,3 +56,85 @@ class FalabellaSession:
             return r.json()
         except Exception as e:
             return {"error": str(e)}
+
+    def get_signed_url(self, action):
+        try:
+            from config import load_config
+            cfg = load_config()
+            r = self.session.get(
+                "https://sellercenter.falabella.com/api-explorer/generate-api-url",
+                params={"api_method": action, "email": cfg.get("fal_email",""), "api_key": "dbf21ec5ac092790b555a76cf743a027e19d2498", "outputFormat": "JSON"},
+                timeout=15, allow_redirects=False
+            )
+            if r.status_code == 200 and r.text.strip().startswith("http"):
+                return r.text.strip()
+            return None
+        except Exception as e:
+            return None
+
+    def api_call(self, action, extra_params=None):
+        if not self.ensure_authenticated():
+            return {"error": "No autenticado"}
+        url = self.get_signed_url(action)
+        if not url:
+            return {"error": "No URL para " + action}
+        try:
+            import requests as req
+            if extra_params:
+                url += "&" + "&".join(str(k)+"="+str(v) for k,v in extra_params.items())
+            r = req.get(url, timeout=15)
+            return r.json()
+        except Exception as e:
+            return {"error": str(e)}
+
+    def get_signed_url(self, action):
+        try:
+            from config import load_config
+            cfg = load_config()
+            r = self.session.get("https://sellercenter.falabella.com/api-explorer/generate-api-url", params={"api_method": action, "email": cfg.get("fal_email",""), "api_key": "dbf21ec5ac092790b555a76cf743a027e19d2498", "outputFormat": "JSON"}, timeout=15, allow_redirects=False)
+            if r.status_code == 200 and r.text.strip().startswith("http"):
+                return r.text.strip()
+            return None
+        except Exception:
+            return None
+
+    def api_call(self, action, extra_params=None):
+        if not self.ensure_authenticated():
+            return {"error": "No autenticado"}
+        url = self.get_signed_url(action)
+        if not url:
+            return {"error": "No URL para " + action}
+        try:
+            import requests as req
+            if extra_params:
+                url += "&" + "&".join(str(k)+"="+str(v) for k,v in extra_params.items())
+            r = req.get(url, timeout=15)
+            return r.json()
+        except Exception as e:
+            return {"error": str(e)}
+
+    def get_signed_url(self, action):
+        try:
+            from config import load_config
+            cfg = load_config()
+            r = self.session.get("https://sellercenter.falabella.com/api-explorer/generate-api-url", params={"api_method": action, "email": cfg.get("fal_email",""), "api_key": "dbf21ec5ac092790b555a76cf743a027e19d2498", "outputFormat": "JSON"}, timeout=15, allow_redirects=False)
+            if r.status_code == 200 and r.text.strip().startswith("http"):
+                return r.text.strip()
+            return None
+        except Exception:
+            return None
+
+    def api_call(self, action, extra_params=None):
+        if not self.ensure_authenticated():
+            return {"error": "No autenticado"}
+        url = self.get_signed_url(action)
+        if not url:
+            return {"error": "No URL para " + action}
+        try:
+            import requests as req
+            if extra_params:
+                url += "&" + "&".join(str(k)+"="+str(v) for k,v in extra_params.items())
+            r = req.get(url, timeout=15)
+            return r.json()
+        except Exception as e:
+            return {"error": str(e)}
