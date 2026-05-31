@@ -197,8 +197,8 @@ def api_debug_config():
 
 @app.route("/api/debug-db")
 def api_debug_db():
-    from database import get_conn
-    conn = get_conn()
+    import database
+    conn = database.get_conn()
     rows = conn.execute("SELECT fal_order_id, boleta_status, error_msg FROM orders LIMIT 20").fetchall()
     return jsonify([{"id": r[0], "status": r[1], "error": r[2]} for r in rows])
 @app.route("/api/reset-errors", methods=["POST"])
