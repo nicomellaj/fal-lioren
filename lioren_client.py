@@ -61,18 +61,9 @@ class LiorenClient:
         data = r.json()
         logger.info(f"Lioren response: {data}")
 
-        folio = (
-            data.get("folio") or
-            data.get("Folio") or
-            data.get("data", {}).get("folio") or
-            ""
-        )
-        pdf_url = (
-            data.get("urlPdf") or
-            data.get("pdf_url") or
-            data.get("data", {}).get("urlPdf") or
-            ""
-        )
+        folio = str(data.get("folio") or data.get("Folio") or "")
+        lioren_id = data.get("id", "")
+        pdf_url = f"https://cl.lioren.enterprises/consultabe/{lioren_id}/getpdf" if lioren_id else ""
 
         if not folio:
             raise Exception(f"Lioren no retorno folio: {data}")
