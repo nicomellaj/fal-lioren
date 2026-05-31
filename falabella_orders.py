@@ -78,59 +78,7 @@ class FalabellaOrdersClient:
         logger.warning("No se encontró endpoint de listado, usando HTML scraping")
         return self._scrape_orders_html(days_back)
 
-    def _scrape_orders_html(self, days_back: int) -> dict:
-        """Fallback: scraping de la página HTML de órdenes."""
-        try:
-            from playwright.sync_api import sync_playwright
-            import json as json_lib
-
-            orders = []
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                context = browser.new_context()
-
-                # Restaurar cookies
-                cookies = []
-                for cookie in self.session.session.cookies:
-                    cookies.append({
-                        "name": cookie.name,
-                        "value": cookie.value,
-                        "domain": ".sellercenter.falabella.com",
-                        "path": "/"
-                    })
-                context.add_cookies(cookies)
-
-                page = context.new_page()
-
-                # Interceptar llamadas de red
-                api_responses = []
-                def handle_response(response):
-                    if "/s/order/" in response.url and response.status == 200:
-                        try:
-                            body = response.json()
-                            api_responses.append({"url": response.url, "data": body})
-                        except Exception:
-                            pass
-
-                page.on("response", handle_response)
-                page.goto("https://sellercenter.falabella.com/index.php?controller=order&action=viewOrders", timeout=30000)
-                page.wait_for_load_state("networkidle", timeout=15000)
-
-                # Esperar que carguen los datos
-                import time
-                time.sleep(3)
-
-                browser.close()
-
-                if api_responses:
-                    logger.info(f"Interceptadas {len(api_responses)} respuestas de API")
-                    for resp in api_responses:
-                        logger.info(f"URL: {resp['url']}, keys: {list(resp['data'].keys())}")
-                    return api_responses[0]["data"] if api_responses else {}
-
-        except Exception as e:
-            logger.error(f"Error scraping: {e}")
-
+    def _scrape_orders_html(self, days_back):
         return {}
 
     def _parse_orders(self, data: dict) -> list:
