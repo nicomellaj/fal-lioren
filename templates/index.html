@@ -193,7 +193,7 @@ async function syncNow() {
 async function marcarDescargado(orderId) {
   const badge = document.getElementById('dl-' + orderId);
   if (badge) { badge.textContent = '✓ ok'; badge.style.color = 'var(--accent2)'; }
-  await fetch('/api/mark-descargado/' + orderId, {method:'POST'});
+  fetch('/api/mark-descargado/' + orderId, {method:'POST', keepalive:true});
 }
 </script>
 </body>
