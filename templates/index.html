@@ -127,7 +127,7 @@ tr:hover td{background:#1a1a1a}
           {% for o in orders %}
           <tr>
             <td class="order-id">
-              <a href="https://sellercenter.falabella.com/index.php?controller=OrderDetail&id_order={{ o.fal_order_id }}" target="_blank">
+              <a href="https://sellercenter.falabella.com/order/invoice#/purchased-order-list" target="_blank">
                 #{{ o.fal_order_number or o.fal_order_id }}
               </a>
             </td>
