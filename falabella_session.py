@@ -15,6 +15,7 @@ class FalabellaSession:
         self.api_key = os.environ.get("FALABELLA_API_KEY", "")
 
     def ensure_authenticated(self):
+        self.api_key = os.environ.get("FALABELLA_API_KEY", self.api_key)
         return bool(self.user_id and self.api_key)
 
     def _get_timestamp(self):
