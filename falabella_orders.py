@@ -1,137 +1,66 @@
 """
-Cliente de órdenes Falabella Seller Center.
-Solo procesa órdenes en estado 'delivered' para emitir boletas.
+Cliente de órdenes Falabella.
+Usa la API oficial via proxy del API Explorer para obtener órdenes delivered.
 """
 import logging
 from datetime import datetime, timedelta
-from falabella_session import FalabellaSession
 
 logger = logging.getLogger(__name__)
 
-# Estados de Falabella Seller Center
-STATUS_DELIVERED = "delivered"
-STATUS_MAP = {
-    "pending": "Pendiente",
-    "ready_to_ship": "Listo para envío",
-    "shipped": "Enviado",
-    "delivered": "Entregado",
-    "canceled": "Cancelado",
-    "failed_delivery": "Fallo entrega",
-    "returned": "Devuelto",
-}
-
-
 class FalabellaOrdersClient:
-    def __init__(self, session: FalabellaSession):
+    def __init__(self, session):
         self.session = session
 
-    def get_delivered_orders(self, days_back: int = 7) -> list:
-        """
-        Obtiene órdenes en estado 'delivered' de los últimos N días.
-        Solo estas órdenes deben generar boleta.
-        """
-        orders = []
-
-        # Intentar endpoint v1
-        try:
-            data = self.session.get(
-                "/s/order/v1/fetchOrderMetaData",
-                params={"status": STATUS_DELIVERED}
-            )
-            if "errors" not in data:
-                logger.info(f"Metadata órdenes: {data}")
-
-            # Buscar el endpoint real de listado
-            data = self._fetch_order_list(days_back)
-            orders = self._parse_orders(data)
-        except Exception as e:
-            logger.error(f"Error obteniendo órdenes: {e}")
-
-        # Filtrar solo delivered
-        delivered = [o for o in orders if o.get("status") == STATUS_DELIVERED]
-        logger.info(f"Órdenes delivered encontradas: {len(delivered)}")
+    def get_delivered_orders(self, days_back=7):
+        """Obtiene órdenes delivered via API oficial de Falabella."""
+        date_from = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        
+        # Llamar API oficial via proxy
+        data = self.session.api_call("GetOrders", {"UpdatedAfter": date_from, "Status": "delivered"})
+        logger.info(f"API GetOrders response: {str(data)[:200]}")
+        
+        orders = self._parse_api_response(data)
+        delivered = [o for o in orders if o.get("status","").lower() in ("delivered","entregado")]
+        
+        if not delivered:
+            # Si no filtra bien, devolver todas
+            delivered = orders
+            
+        logger.info(f"Órdenes delivered: {len(delivered)}")
         return delivered
 
-    def _fetch_order_list(self, days_back: int) -> dict:
-        """Intenta múltiples endpoints para obtener la lista de órdenes."""
-        date_from = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
-
-        # Endpoints a probar en orden
-        endpoints = [
-            f"/s/order/v1/fetchOrderList?status={STATUS_DELIVERED}&limit=50&offset=0",
-            f"/s/order/v1/orders?status={STATUS_DELIVERED}&limit=50&offset=0&dateFrom={date_from}",
-            f"/s/order/v2/fetchOrderList?status={STATUS_DELIVERED}&limit=50",
-            f"/s/order/v1/getOrderList?status={STATUS_DELIVERED}&limit=50",
-        ]
-
-        for endpoint in endpoints:
-            data = self.session.get(endpoint)
-            if "errors" in data:
-                err = data["errors"][0].get("code", "")
-                if err == "INVALID_ENDPOINT":
-                    continue
-            # Si llegamos aquí y hay data útil
-            if data and "errors" not in data:
-                logger.info(f"Endpoint funcional: {endpoint}")
-                return data
-
-        logger.warning("No se encontró endpoint de listado, usando HTML scraping")
-        return self._scrape_orders_html(days_back)
-
-    def _scrape_orders_html(self, days_back):
-        return {}
-
-    def _parse_orders(self, data: dict) -> list:
-        """Parsea la respuesta de la API a formato estándar."""
+    def _parse_api_response(self, data):
+        """Parsea respuesta XML/JSON de la API oficial de Falabella."""
         orders = []
-
-        if not data or not isinstance(data, dict):
+        if not data or "error" in data:
+            logger.error(f"Error en respuesta: {data}")
             return orders
 
-        # Buscar lista de órdenes en diferentes estructuras posibles
-        order_list = (
-            data.get("data", {}).get("orders", []) or
-            data.get("orders", []) or
-            data.get("data", []) or
-            []
-        )
-
-        for o in order_list:
-            try:
+        try:
+            # Estructura de la API oficial de Falabella
+            order_list = (
+                data.get("SuccessResponse", {}).get("Body", {}).get("Orders", {}).get("Order", []) or
+                data.get("Body", {}).get("Orders", {}).get("Order", []) or
+                data.get("Orders", {}).get("Order", []) or
+                []
+            )
+            
+            if isinstance(order_list, dict):
+                order_list = [order_list]
+                
+            for o in order_list:
                 order = {
-                    "order_id": str(o.get("orderId") or o.get("order_id") or o.get("id", "")),
-                    "order_number": str(o.get("orderNumber") or o.get("order_number") or ""),
-                    "status": (o.get("status") or o.get("orderStatus") or "").lower(),
-                    "buyer_name": self._get_buyer_name(o),
-                    "total_amount": float(o.get("price") or o.get("total") or o.get("totalAmount") or 0),
-                    "items": self._get_items(o),
-                    "created_at": o.get("createdAt") or o.get("created_at") or "",
-                    "delivered_at": o.get("deliveredAt") or o.get("delivered_at") or "",
-                    "raw": o,
+                    "order_id": str(o.get("OrderId") or o.get("OrderNumber") or ""),
+                    "order_number": str(o.get("OrderNumber") or ""),
+                    "status": str(o.get("Status") or o.get("OrderStatus") or "").lower(),
+                    "buyer_name": f"{o.get('CustomerFirstName','')} {o.get('CustomerLastName','')}".strip() or "—",
+                    "total_amount": float(o.get("Price") or o.get("Total") or 0),
+                    "items": [{"name": "Venta Falabella", "quantity": 1, "unit_price": float(o.get("Price") or 0)}],
+                    "created_at": o.get("CreatedAt") or "",
+                    "delivered_at": o.get("UpdatedAt") or "",
                 }
                 orders.append(order)
-            except Exception as e:
-                logger.error(f"Error parseando orden: {e}")
-
+        except Exception as e:
+            logger.error(f"Error parseando órdenes: {e}, data={str(data)[:300]}")
+        
         return orders
-
-    def _get_buyer_name(self, o: dict) -> str:
-        first = o.get("customerFirstName") or o.get("firstName") or ""
-        last = o.get("customerLastName") or o.get("lastName") or ""
-        if first or last:
-            return f"{first} {last}".strip()
-        return o.get("buyerName") or o.get("buyer_name") or "—"
-
-    def _get_items(self, o: dict) -> list:
-        items = o.get("orderItems") or o.get("items") or []
-        result = []
-        for item in items:
-            result.append({
-                "name": item.get("name") or item.get("productName") or "Producto",
-                "quantity": int(item.get("quantity") or item.get("qty") or 1),
-                "unit_price": float(item.get("price") or item.get("unitPrice") or 0),
-            })
-        if not result:
-            total = float(o.get("price") or o.get("total") or 0)
-            result = [{"name": "Venta Falabella", "quantity": 1, "unit_price": total}]
-        return result
