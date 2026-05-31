@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 scheduler = BackgroundScheduler()
+
+with app.app_context():
+    init_db()
 _sync_lock = threading.Lock()
 _sync_service = None
 
