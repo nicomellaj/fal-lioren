@@ -2,6 +2,9 @@
 import sqlite3
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+CHILE_TZ = ZoneInfo("America/Santiago")
 
 DB_PATH = os.path.join(
     os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", os.path.dirname(os.path.abspath(__file__))),
@@ -93,14 +96,14 @@ def save_order(order):
 def update_boleta(fal_order_id, folio, pdf_url, status="emitida"):
     conn = get_conn()
     conn.execute("UPDATE orders SET boleta_status=?, boleta_folio=?, boleta_pdf_url=?, processed_at=? WHERE fal_order_id=?",
-                 (status, folio, pdf_url, datetime.utcnow().isoformat(), fal_order_id))
+                 (status, folio, pdf_url, datetime.now(CHILE_TZ).isoformat(), fal_order_id))
     conn.commit()
     conn.close()
 
 def mark_error(fal_order_id, msg):
     conn = get_conn()
     conn.execute("UPDATE orders SET boleta_status='error', processed_at=? WHERE fal_order_id=?",
-                 (datetime.utcnow().isoformat(), fal_order_id))
+                 (datetime.now(CHILE_TZ).isoformat(), fal_order_id))
     conn.commit()
     conn.close()
 
@@ -113,7 +116,7 @@ def mark_pdf_descargado(fal_order_id):
 def add_log(message, level="info"):
     conn = get_conn()
     conn.execute("INSERT INTO logs (timestamp, message, level) VALUES (?,?,?)",
-                 (datetime.now().strftime("%H:%M"), message, level))
+                 (datetime.now(CHILE_TZ).strftime("%H:%M"), message, level))
     conn.execute("DELETE FROM logs WHERE id NOT IN (SELECT id FROM logs ORDER BY id DESC LIMIT 200)")
     conn.commit()
     conn.close()
