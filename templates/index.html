@@ -111,6 +111,9 @@ tr:hover td{background:#1a1a1a}
         <span>{% if mostrar_todos %}Todos los pedidos{% else %}Pedidos recientes{% endif %}</span>
         {% if not mostrar_todos %}<a href="/todos">Ver todos →</a>{% endif %}
       </div>
+      <div style="padding:.8rem 1.5rem;border-bottom:1px solid var(--border)">
+        <input id="filtro" type="text" placeholder="Buscar por orden, comprador o folio..." style="width:100%;background:#111;border:1px solid var(--border);border-radius:6px;padding:.5rem 1rem;color:var(--text);font-size:.8rem" oninput="filtrarTabla(this.value)">
+      </div>
       {% if orders %}
       <table>
         <thead>
@@ -184,6 +187,14 @@ async function syncNow() {
   btn.disabled = true;
   await fetch('/api/sync', {method:'POST'});
   setTimeout(() => location.reload(), 4000);
+}
+
+function filtrarTabla(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('tbody tr').forEach(function(row) {
+    var texto = row.textContent.toLowerCase();
+    row.style.display = texto.includes(q) ? '' : 'none';
+  });
 }
 
 async function marcarOk(orderId, btn) {
