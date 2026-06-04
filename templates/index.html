@@ -146,7 +146,7 @@ tr:hover td{background:#1a1a1a}
                 <button onclick="marcarOk('{{ o.fal_order_id }}', this)" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:{% if o.pdf_descargado %}var(--accent2){% else %}var(--muted){% endif %}">{% if o.pdf_descargado %}✓ ok{% else %}○{% endif %}</button>
               {% else %}—{% endif %}
             </td>
-            <td style="color:var(--muted);font-size:.72rem">{{ o.created_at[:16] if o.created_at else '—' }}</td>
+            <td style="color:var(--muted);font-size:.72rem">{{ o.processed_at[:16] if o.processed_at else (o.created_at[:16] if o.created_at else "—") if o.created_at else '—' }}</td>
           </tr>
           {% endfor %}
         </tbody>
