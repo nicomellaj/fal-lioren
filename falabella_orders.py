@@ -15,19 +15,43 @@ class FalabellaOrdersClient:
         """Obtiene órdenes delivered via API oficial de Falabella."""
         date_from = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
         
-        # Llamar API oficial via proxy
         data = self.session.api_call("GetOrders", {"UpdatedAfter": date_from, "Status": "delivered"})
         logger.info(f"API GetOrders response: {str(data)[:200]}")
         
         orders = self._parse_api_response(data)
         delivered = [o for o in orders if o.get("status","").lower() in ("delivered","entregado")]
-        
         if not delivered:
-            # Si no filtra bien, devolver todas
             delivered = orders
-            
+
+        # Obtener items reales por cada orden
+        for order in delivered:
+            try:
+                items_data = self.session.api_call("GetOrderItems", {"OrderId": order["order_id"]})
+                order["items"] = self._parse_order_items(items_data)
+            except Exception as e:
+                logger.error(f"Error obteniendo items de orden {order['order_id']}: {e}")
+
         logger.info(f"Órdenes delivered: {len(delivered)}")
         return delivered
+
+    def _parse_order_items(self, data):
+        """Parsea items de una orden."""
+        items_raw = (
+            data.get("SuccessResponse", {}).get("Body", {}).get("OrderItems", {}).get("OrderItem", [])
+        )
+        if isinstance(items_raw, dict):
+            items_raw = [items_raw]
+        if not items_raw:
+            return []
+        result = []
+        for item in items_raw:
+            result.append({
+                "name": item.get("Name", "Producto")[:80],
+                "quantity": 1,
+                "unit_price": float(item.get("PaidPrice") or item.get("ItemPrice") or 0),
+                "sku": item.get("Sku", ""),
+            })
+        return result
 
     def _parse_api_response(self, data):
         """Parsea respuesta XML/JSON de la API oficial de Falabella."""
