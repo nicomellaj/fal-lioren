@@ -198,10 +198,8 @@ function filtrarTabla(q) {
 }
 
 async function marcarOk(orderId, btn) {
-  btn.textContent = '✓ ok';
-  btn.style.color = 'var(--accent2)';
-  const r = await fetch('/api/mark-descargado/' + orderId, {method:'POST'});
-  if (!r.ok) { btn.textContent = '○'; }
+  if (btn) { btn.textContent = '✓ ok'; btn.style.color = 'var(--accent2)'; }
+  try { await fetch('/api/mark-descargado/' + orderId, {method:'POST'}); } catch(e) {}
 }
 </script>
 </body>
