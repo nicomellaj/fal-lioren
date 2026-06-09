@@ -145,7 +145,7 @@ tr:hover td{background:#1a1a1a}
             </td>
             <td>
               {% if o.boleta_folio %}
-                <a class="folio-link" href="{{ o.boleta_pdf_url or '#' }}" target="_blank" onclick="marcarOk('{{ o.fal_order_id }}', document.getElementById('btn-{{ o.fal_order_id }}'))">{{ o.boleta_folio }}</a>
+                <a class="folio-link" href="#" onclick="abrirBoleta('{{ o.boleta_pdf_url }}', '{{ o.fal_order_id }}', document.getElementById('btn-{{ o.fal_order_id }}'))">{{ o.boleta_folio }}</a>
                 <button id="btn-{{ o.fal_order_id }}" onclick="marcarOk('{{ o.fal_order_id }}', this)" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:{% if o.pdf_descargado %}var(--accent2){% else %}var(--muted){% endif %}">{% if o.pdf_descargado %}✓ ok{% else %}○{% endif %}</button>
               {% else %}—{% endif %}
             </td>
@@ -195,6 +195,11 @@ function filtrarTabla(q) {
     var texto = row.textContent.toLowerCase();
     row.style.display = texto.includes(q) ? '' : 'none';
   });
+}
+
+async function abrirBoleta(url, orderId, btn) {
+  await marcarOk(orderId, btn);
+  window.open(url, '_blank');
 }
 
 async function marcarOk(orderId, btn) {
