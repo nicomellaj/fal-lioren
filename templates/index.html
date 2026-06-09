@@ -145,8 +145,8 @@ tr:hover td{background:#1a1a1a}
             </td>
             <td>
               {% if o.boleta_folio %}
-                <a class="folio-link" href="{{ o.boleta_pdf_url or '#' }}" target="_blank">{{ o.boleta_folio }}</a>
-                <button onclick="marcarOk('{{ o.fal_order_id }}', this)" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:{% if o.pdf_descargado %}var(--accent2){% else %}var(--muted){% endif %}">{% if o.pdf_descargado %}✓ ok{% else %}○{% endif %}</button>
+                <a class="folio-link" href="{{ o.boleta_pdf_url or '#' }}" target="_blank" onclick="marcarOk('{{ o.fal_order_id }}', document.getElementById('btn-{{ o.fal_order_id }}'))">{{ o.boleta_folio }}</a>
+                <button id="btn-{{ o.fal_order_id }}" onclick="marcarOk('{{ o.fal_order_id }}', this)" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:{% if o.pdf_descargado %}var(--accent2){% else %}var(--muted){% endif %}">{% if o.pdf_descargado %}✓ ok{% else %}○{% endif %}</button>
               {% else %}—{% endif %}
             </td>
             <td style="color:var(--muted);font-size:.72rem">{{ o.processed_at[:16].replace("T"," ") if o.processed_at else (o.created_at[:16].replace("T"," ") if o.created_at else "—") if o.created_at else '—' }}</td>
