@@ -214,6 +214,13 @@ def api_reset_errors():
     from database import reset_errors
     deleted = reset_errors()
     return jsonify({"ok": True, "deleted": deleted})
+
+@app.route("/api/test-items/<order_id>")
+def api_test_items(order_id):
+    from falabella_session import FalabellaSession
+    session = FalabellaSession()
+    data = session.api_call("GetOrderItems", {"OrderId": order_id})
+    return jsonify(data)
 @app.route("/api/set-cookies", methods=["POST"])
 def api_set_cookies():
     """Recibe cookies de sesión Falabella desde el navegador autenticado."""
