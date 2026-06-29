@@ -19,9 +19,7 @@ class FalabellaOrdersClient:
         logger.info(f"API GetOrders response: {str(data)[:200]}")
         
         orders = self._parse_api_response(data)
-        delivered = [o for o in orders if o.get("status","").lower() in ("delivered","entregado")]
-        if not delivered:
-            delivered = orders
+        delivered = orders
 
         # Obtener items reales por cada orden
         for order in delivered:
